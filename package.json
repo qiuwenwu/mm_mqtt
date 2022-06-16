@@ -1,0 +1,33 @@
+{
+  "name": "mm_mqtt",
+  "version": "1.0.0",
+  "description": "这是超级美眉MQTT模块，适用于物联网应用开发、游戏开发",
+  "main": "index.js",
+  "dependencies": {
+    "mqtt": "^4.3.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node test.js",
+    "dev": "nodemon test.js",
+    "client": "nodemon test_client_in.js",
+    "service": "nodemon test_client_out.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qiuwenwu/mm_mqtt.git"
+  },
+  "keywords": [
+    "mm",
+    "mqtt",
+    "Iot",
+    "app",
+    "game"
+  ],
+  "author": "邱文武",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/qiuwenwu/mm_mqtt/issues"
+  },
+  "homepage": "https://github.com/qiuwenwu/mm_mqtt#readme"
+}
