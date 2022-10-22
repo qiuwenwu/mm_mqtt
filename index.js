@@ -174,12 +174,12 @@ MM_mqtt.prototype.req = function(topic, method, params, func) {
 		method,
 		params
 	};
-	this.send(topic, data);
 
 	if (func) {
 		data.func = func;
 		this.list_msg.push(data);
 	}
+	this.send(topic, data);
 };
 
 /**
@@ -188,7 +188,7 @@ MM_mqtt.prototype.req = function(topic, method, params, func) {
  * @param {Object} params 传递参数
  * @returns {Object} 返回响应结果
  */
-MM_mqtt.prototype.reqSync = function(topic, method, params) {
+MM_mqtt.prototype.reqASync = function(topic, method, params) {
 	var _this = this;
 	return new Promise((resolve, reject) => {
 		var hasMsg;

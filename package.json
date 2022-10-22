@@ -1,6 +1,6 @@
 {
   "name": "mm_mqtt",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "这是超级美眉MQTT模块，适用于物联网应用开发、游戏开发",
   "main": "index.js",
   "dependencies": {
