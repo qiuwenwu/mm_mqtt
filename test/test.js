@@ -1,8 +1,6 @@
+var MQTT = require('../index.js');
+var mqtt = new MQTT();
 
-var mqtt = 
-mqtt.message = (topic, message) => {
-	console.log("这就是消息", topic, message);
-};
 mqtt.run();
 mqtt.subscribe('test');
 mqtt.methods.seting = function(param) {

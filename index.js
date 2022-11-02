@@ -10,7 +10,7 @@ class MM_mqtt {
 			host: "127.0.0.1",
 			port: "8083",
 			protocol: "ws",
-			clientId: "web123",
+			clientId: "service123",
 			username: "admin",
 			password: "asd123",
 			clean: false
@@ -38,6 +38,11 @@ class MM_mqtt {
 		];
 
 		/**
+		 * 订阅集合 (主题 => 函数列表)
+		 */
+		this.dict_subscribe = {};
+
+		/**
 		 * method collection
 		 */
 		this.methods = {
@@ -48,6 +53,24 @@ class MM_mqtt {
 				return Object.keys(_this.methods)
 			}
 		};
+
+		this.retryTimes = 0;
+		this.connecting = false;
+	}
+}
+
+/**
+ * 重新连接
+ */
+MM_mqtt.prototype.reconnect = function() {
+	this.retryTimes += 1;
+	if (this.retryTimes > 5) {
+		try {
+			this.client.end();
+			this.init();
+		} catch (error) {
+			this.$message.error(error.toString());
+		}
 	}
 }
 
@@ -57,25 +80,48 @@ class MM_mqtt {
  */
 MM_mqtt.prototype.init = function(config) {
 	this.config = Object.assign(this.config, config);
+	this.client = {
+		connected: false,
+	};
+	this.retryTimes = 0;
+	this.connecting = false;
 };
 
 /**
  * 运行MQTT
  */
 MM_mqtt.prototype.run = function() {
-	this.client = MQTT.connect(this.config);
-	return new Promise((resolve, reject) => {
-		this.client.on('connect', (packet, err) => {
-			if (err) {
-				resolve(null);
-				reject(err);
-			} else {
-				this.client.on('message', (topic, message) => {
-					this.receive(topic, message.toString());
+	this.connecting = true;
+	var err;
+	try {
+		this.client = MQTT.connect(this.config);
+		if (this.client.on) {
+			return new Promise((resolve, reject) => {
+				this.client.on('connect', (packet, err) => {
+					this.connecting = false;
+					if (err) {
+						resolve(null);
+						reject(err);
+					} else {
+						this.client.on('message', (topic, message) => {
+							this.receive(topic, message.toString());
+						});
+						resolve(packet);
+					}
 				});
-				resolve(packet);
-			}
-		});
+				this.client.on("reconnect", this.reconnect);
+				this.client.on("error", (error) => {
+					console.log("Connection failed", error);
+				});
+			});
+		}
+	} catch (error) {
+		this.connecting = false;
+		err = error;
+	}
+	return new Promise((resolve, reject) => {
+		resolve(null);
+		reject(err);
 	});
 };
 
@@ -94,8 +140,18 @@ MM_mqtt.prototype.on = function(eventName, func) {
  * @param {Object} msg 消息主体
  */
 MM_mqtt.prototype.message = function(topic, msg) {
-	console.log("一般消息", topic, msg);
+	if (this.dict_subscribe[topic]) {
+		var list = this.dict_subscribe[topic];
+		try {
+			for (var key in list) {
+				list[key](msg);
+			}
+		} catch (err) {
+			console.error(err);
+		}
+	}
 }
+
 
 /**
  * 接收消息
@@ -128,7 +184,18 @@ MM_mqtt.prototype.receive = function(topic, bodyStr) {
 				return;
 			}
 		} else if (json.method) {
-			var func = this.methods[json.method];
+			var func;
+			var methods = this.methods;
+			var arr = json.method.split('.');
+			for (var i = 0; i < arr.length; i++) {
+				var m = methods[arr[i]];
+				if (m) {
+					methods = m;
+				}
+			}
+			if (methods && typeof(methods) == 'function') {
+				func = methods;
+			}
 			if (func) {
 				var ret = func(json.params);
 				if (ret) {
@@ -148,10 +215,31 @@ MM_mqtt.prototype.receive = function(topic, bodyStr) {
 	this.message(topic, bodyStr);
 };
 
-MM_mqtt.prototype.subscribe = function(topic) {
+
+MM_mqtt.prototype.subscribe = function(topic, func) {
 	this.client.subscribe(topic, {
 		qos: 1
 	});
+	if (func) {
+		if (!this.dict_subscribe[topic]) {
+			this.dict_subscribe[topic] = {};
+		}
+		var key = this.key_num + 1;
+		this.dict_subscribe[topic][key] = func;
+		return key;
+	}
+}
+
+MM_mqtt.prototype.unsubscribe = function(key) {
+	this.client.subscribe(topic, {
+		qos: 1
+	});
+	if (func) {
+		if (!this.dict_subscribe[topic]) {
+			this.dict_subscribe[topic] = {};
+		}
+		delete this.dict_subscribe[topic][key];
+	}
 }
 
 MM_mqtt.prototype.end = function() {
