@@ -230,15 +230,14 @@ MM_mqtt.prototype.subscribe = function(topic, func) {
 	}
 }
 
-MM_mqtt.prototype.unsubscribe = function(key) {
-	this.client.subscribe(topic, {
-		qos: 1
-	});
-	if (func) {
-		if (!this.dict_subscribe[topic]) {
-			this.dict_subscribe[topic] = {};
+MM_mqtt.prototype.unsubscribe = function(topic, key) {
+	this.client.unsubscribe(topic);
+	if (key) {
+		if (this.dict_subscribe[topic]) {
+			delete this.dict_subscribe[topic][key];
 		}
-		delete this.dict_subscribe[topic][key];
+	} else {
+		this.dict_subscribe[topic] = {};
 	}
 }
 
