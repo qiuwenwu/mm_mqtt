@@ -15,7 +15,9 @@ client.on("connect", function(err){
     console.log("服务器连接成功");
 	client.unsubscribe("test");
     client.subscribe("temperature", (err) => {
-		console.log("错误", err);
+		if(err){
+			console.log("错误", err);
+		}
 	}) // 订阅主题为test的消息
 })
 
